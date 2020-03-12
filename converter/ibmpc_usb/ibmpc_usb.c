@@ -585,6 +585,43 @@ static int8_t process_cs1(void)
  * These two Korean keys need exceptional handling and are not supported for now.
  *
  */
+static void cs2_bootloader(void){    
+    clear_keyboard();
+    cli();
+    // disable watchdog, if enabled
+    // disable all peripherals
+    UDCON = 1;
+    USBCON = (1<<FRZCLK);  // disable USB
+    UCSR1B = 0;
+    _delay_ms(5);
+    // Teensy 2.0
+    EIMSK = 0; PCICR = 0; SPCR = 0; ACSR = 0; EECR = 0; ADCSRA = 0;
+    TIMSK0 = 0; TIMSK1 = 0; TIMSK3 = 0; TIMSK4 = 0; UCSR1B = 0; TWCR = 0;
+    DDRB = 0; DDRC = 0; DDRD = 0; DDRE = 0; DDRF = 0; TWCR = 0;
+    PORTB = 0; PORTC = 0; PORTD = 0; PORTE = 0; PORTF = 0;
+    asm volatile("jmp 0x7E00");
+}
+ 
+static uint8_t cs2_9xcode(uint8_t code){
+    switch(code){
+        //EF1 : 0x0F EF2 : 0x10 -- EF are the keys right of the F keys in the same row (usually F13.. on other keebs)
+        //case 0x84: return 0x76; //SETUP key now enters Teensy 2.0 bootloader
+        case 0x90: return 0x7E; //EF3 - Scroll Lock
+        case 0x91: return 0x27; //EF4 - End
+        case 0x93: return 0x39; //INSERT - Insert
+        case 0x94: return 0x37; //DELETE - Delete
+        case 0x95: return 0x77; //EF6 - Num Lock
+        case 0x96: return 0x56; //EF7 - Pg Down
+        case 0x9A: return 0x80; //BREAK - Pause/Break
+        case 0x9B: return 0x5E; //EF8 - Pg Up
+        case 0xA4: return 0x47; //RIGHT
+        case 0xA5: return 0x3F; //DOWN
+        case 0xA6: return 0x53; //LEFT
+        case 0xA7: return 0x4F; //UP
+        default: return 0x18; // Output 'A' keystrokes for debugging purposes
+    }
+}
+
 static uint8_t cs2_e0code(uint8_t code) {
     switch(code) {
         // E0 prefixed codes translation See [a].
@@ -657,7 +694,7 @@ static int8_t process_cs2(void)
         E1_F0_14,
         E1_F0_14_F0,
     } state = INIT;
-
+    
     uint16_t code = ibmpc_host_recv();
     if (code == -1) {
         return 0;
@@ -670,6 +707,7 @@ static int8_t process_cs2(void)
                     xprintf("!CS2_OVR!\n");
                     matrix_clear();
                     clear_keyboard();
+                    state = INIT;
                     break;
                 case 0xFF:
                     matrix_clear();
@@ -690,23 +728,27 @@ static int8_t process_cs2(void)
                     matrix_make(0x02);
                     state = INIT;
                     break;
-                case 0x84:  // Alt'd PrintScreen
-                    matrix_make(0x6F);
-                    state = INIT;
-                    break;
                 case 0xAA:  // Self-test passed
                 case 0xFC:  // Self-test failed
                     // reset or plugin-in new keyboard
                     state = INIT;
                     return -1;
                     break;
-                default:    // normal key make
+                    
+		default:    // normal key make
                     state = INIT;
                     if (code < 0x80) {
                         matrix_make(code);
+                    } else if(code < 0xB0){
+                        if (code == 0x84){      //setup key
+                            cs2_bootloader();
+                            return -1;
+                        }
+                        xprintf(" hndling %02X ",code);
+                        matrix_make(cs2_9xcode(code));
                     } else {
                         matrix_clear();
-                        xprintf("!CS2_INIT!\n");
+                        xprintf("!CS2_INIT! code:%02X\n",code);
                         return -1;
                     }
             }
@@ -737,17 +779,16 @@ static int8_t process_cs2(void)
                     matrix_break(0x02);
                     state = INIT;
                     break;
-                case 0x84:  // Alt'd PrintScreen
-                    matrix_break(0x6F);
-                    state = INIT;
-                    break;
                 default:
                     state = INIT;
                     if (code < 0x80) {
                         matrix_break(code);
+                    } else if (code < 0xB0){
+                        xprintf(" hndling %02X brk ",code);
+                        matrix_break(cs2_9xcode(code));
                     } else {
                         matrix_clear();
-                        xprintf("!CS2_F0!\n");
+                        xprintf("!CS2_F0! code:%02X\n", code);
                         return -1;
                     }
             }

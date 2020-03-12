@@ -1,0 +1,1 @@
+If you want to use this converter with another Teensy than 2.0, configure the cs2_bootloader procedure accordingly and change the Makefile to include the Makefile for your chip. Note that keycodes may differ for your board depending on layout. See ibmpc_usb.c and unimap_trans.h for details

@@ -23,9 +23,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define VENDOR_ID       0xFEED
 #define PRODUCT_ID      0x1bee
 #define DEVICE_VER      0x0001
-#define MANUFACTURER    t.m.k.
-#define PRODUCT         IBM PC keyboard converter
-#define DESCRIPTION     convert IBM PC keyboard to USB
+#define MANUFACTURER    NCR
+#define PRODUCT         4950
+#define DESCRIPTION     USB-Converted powered by Teensy 2.0 
 
 
 /* matrix size */

@@ -1,5 +1,11 @@
-TMK Keyboard Firmware Collection
-================================
+TMK Keyboard Firmware Collection: Converter for NCR 4950 fork
+=============================================================
+
+This is a fork for implementing an USB converter for the NCR 4950 keyboard. The only changes of the source code are at converter/ibmpc_usb . To build run "make". Changes include the Keymap, and the handling of special scancodes, aswell as the USB vendor/product config. This code is written to work Teensy 2.0. For license, other information etc. see original README:
+
+Original README
+---------------
+
 This repository includes keyboard and converter firmware projects built with [`tmk_core`][tmk_core] keyboard library.
 
 The latest source code is available here: <http://github.com/tmk/tmk_keyboard>
